@@ -1,5 +1,6 @@
-# Exclude the project notebook from the pushed repo
-*.ipynb
+# Exclude any created databases from push
+*.db
+*.db-journal
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
