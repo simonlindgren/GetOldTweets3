@@ -1,5 +1,5 @@
 # GetOldTweets3
-This project, originally by [Jefferson-Henrique](https://github.com/Jefferson-Henrique/GetOldTweets-python) and improved by [Mottl](https://github.com/Mottl/GetOldTweets3), is designed to perform searches for old tweets through [twitter.com](https://twitter.com) and store them as ordered datasets.
+This project, originally by [Jefferson-Henrique](https://github.com/Jefferson-Henrique/GetOldTweets-python) and improved by [Mottl](https://github.com/Mottl/GetOldTweets3), is designed to perform searches for old tweets through [twitter.com](https://twitter.com) and store them as ordered datasets. This version contains a wrapper script for easy launching of search jobs.
 
 ## Wrapper
 To use the wrapper script:
