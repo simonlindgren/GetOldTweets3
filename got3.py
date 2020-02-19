@@ -2,25 +2,24 @@
 
 '''
 GET OLD TWEETS
-Command line version
-Simon Lindgren 200218
+Command line wrapper
+Simon Lindgren 200219
 '''
 
 import got3 as got
 import sqlite3
-import pandas as pd
 import re
 import sys
 import datetime
 
+    
 def main():
     print("GET OLD TWEETS")
     print("==============")
     project_setup()
     create_database()
-    search_compiler()
     run_search()
-    end_program()
+    remove_duplicates()
     
     
 def project_setup():
@@ -32,11 +31,11 @@ def project_setup():
     
     # QUERYSEARCH
     print("")
-    print("Search terms, one or several separated by space")
+    print("Search terms, one or several separated by comma")
     print("Leave empty to only search by username")
     global keywords
     keywords = ""
-    keywords = input('e.g. monkey "banana time" #ape2020 "donkey kong": ')
+    keywords = input('e.g. monkey,"time for bananas",#ape2020,"donkey kong": ')
     
     # USERNAMES
     print("")
@@ -45,15 +44,16 @@ def project_setup():
     global usernames
     usernames = ""
     usernames = input('e.g. @nintendo @jupyter: ')
+    usernames = [un for un in usernames.split()]
     
     # DATES
     print("")
     print("Enter date range for search in YYYY-NN-DD format")
     global since
-    since = (input("start date: "))
+    since = (input("start date UTC (included in search): "))
     validate(since)
     global until
-    until = (input("end date: "))
+    until = (input("end date UTC (excluded from search): "))
     validate(until)
     
     # TOPTWEETS
@@ -65,18 +65,6 @@ def project_setup():
         toptweets = True
     else:
         toptweets = False
-        
-    # NEAR
-    print("")
-    print("Set a location to get tweets from 'near' that place, or leave blank")
-    global near
-    near = input("e.g. Berlin, Germany: ")
-    
-    # WITHIN
-    print("")
-    print("Set a distance radius from the 'near' location, or leave blank")
-    global within
-    within = input("e.g. 15km: ")
     
     #MAXTWEETS
     print("")
@@ -97,99 +85,75 @@ def create_database():
         c.execute("""CREATE TABLE tweets (
         tweet_id TEXT,
         author TEXT,
+        in_reply_to TEXT,
         tweet TEXT,
         date TEXT,
         retweets INT,
         favourites INT,
         mentions TEXT,
-        hashtags TEXT)
+        hashtags TEXT,
+        geo TEXT)
         """)
         conn.close()
     except:
         print("A database with this name already exists")
-        sys.exit()
-    
-    
-def search_compiler():
-    global searchstring
-    
-    searchstring = "got.manager.TweetCriteria()"
-    
-    if len(keywords) > 1:
-        searchstring += ".setQuerySearch(query)"
-    else: pass
-    if len(usernames) >1:
-        searchstring += ".setUsername(usernames)"
-    else: pass
-    if len(near) >1:
-        searchstring += ".setNear(near)"
-    else: pass
-    if len(within) >1:
-        searchstring += ".setWithin(within)"
-    else: pass
-    
-    searchstring += ".setSince(since).setUntil(until).setTopTweets(toptweets).setMaxTweets(maxtweets)"
-    
+        sys.exit()       
     
 def run_search():
-    for kw in keywords.split():
+    
+    for kw in keywords.split(","):
+        
         conn = sqlite3.connect(dbname)
-        query = kw
-        print("\nRunning search for " + query)
-        
-       
+    
+        tweetCriteria = got.manager.TweetCriteria()
 
+        # Set the search parameters that we always set       
+        tweetCriteria.setMaxTweets(maxtweets)
+        tweetCriteria.setSince(since)
+        tweetCriteria.setUntil(until)
+        tweetCriteria.setTopTweets(toptweets)
+        tweetCriteria.setEmoji("unicode")
+
+        if len(keywords) != 0:
+            tweetCriteria.setQuerySearch(kw)
+        if len(usernames) != 0:
+            tweetCriteria.setUsername(usernames)
         
-        #tweetCriteria = got.manager.TweetCriteria()\
-        #.setQuerySearch(query)\
-        #.setUsername(usernames)\
-        #.setTopTweets(toptweets)\
-        #.setSince(since)\
-        #.setUntil(until)\
-        #.setNear(near)\
-        #.setWithin(within)\
-        #.setMaxTweets(maxtweets)
-        
-        tweetCriteria = searchstring
-        
-        tweets = got.manager.TweetManager.getTweets(tweetCriteria)
+
+        tweets=got.manager.TweetManager.getTweets(tweetCriteria)
         for t in tweets:
             tweet_id = t.id
-            author = t.permalink.split("/")[3]
-            tweet = re.sub("# ", "#", t.text.lower()) 
-            tweet = re.sub("@ ", "@", tweet) 
-            tweet = re.sub("\!|\,|\.|\?", "", tweet)
-            date = str(t.date)
+            author = t.username
+            in_reply_to = t.to
+            tweet = t.text
+            date = t.date
             retweets = t.retweets
             favourites = t.favorites
-            tokens = [t for t in tweet.split() if not "/" in t]
-            hashtags = " ".join([t for t in tokens if t.startswith("#")])
-            mentions = " ".join([t for t in tokens if t.startswith("@")])
-            conn.execute('INSERT INTO tweets (tweet_id, author, tweet, date, retweets, favourites, mentions, hashtags) VALUES (?,?,?,?,?,?,?,?)',\
-                         (tweet_id, author, tweet, date, retweets, favourites, mentions,hashtags))
+            mentions = t.mentions
+            hashtags = t.hashtags
+            geo = t.geo
+            
+            
+            conn.execute('INSERT INTO tweets (tweet_id, author, in_reply_to, tweet, date, retweets, favourites, mentions, hashtags,geo) VALUES (?,?,?,?,?,?,?,?,?,?)',\
+                         (tweet_id, author, in_reply_to, tweet, date, retweets, favourites, mentions, hashtags, geo))
             conn.commit()
 
-def end_program():
+def remove_duplicates():
+
     conn = sqlite3.connect(dbname)
     cur = conn.cursor()
-    cur.execute("SELECT max(rowid) from tweets")
-    n = cur.fetchone()[0]
-    print("\n" + str(n) + " tweets written to database")
-    
-    conn = sqlite3.connect("oldtweets.db")
     cur.execute("CREATE TABLE temp_table as SELECT DISTINCT * FROM tweets")
     cur.execute("DELETE from tweets")
     conn.commit()
-    
+
     cur.execute("INSERT INTO tweets SELECT * FROM temp_table")
     cur.execute("DELETE from temp_table")
     conn.commit()
     
     cur.execute("SELECT max(rowid) from tweets")
     n = cur.fetchone()[0]
-    print("\n" + str(n) + " tweets after duplicates removal\n")
-    
-    
+    print("\n" + str(n) + " tweets written to database\n")
+            
 def validate(date_text):
     try:
         datetime.datetime.strptime(date_text, '%Y-%m-%d')
