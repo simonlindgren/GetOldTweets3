@@ -13,4 +13,3 @@ Run the following command to install package dependencies:
 ```
 pip install -r requirements.txt
 ```
----
