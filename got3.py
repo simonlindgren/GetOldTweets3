@@ -12,7 +12,7 @@ import re
 import sys
 import datetime
 
-    
+
 def main():
     print("GET OLD TWEETS")
     print("==============")
@@ -20,15 +20,15 @@ def main():
     create_database()
     run_search()
     remove_duplicates()
-    
-    
+
+
 def project_setup():
     projname = input("Project name? ")
     global dbname
     dbname = (projname + ".db")
-    
+
     print("Searches can by done by search term(s), by username(s), or by both in combination")
-    
+
     # QUERYSEARCH
     print("")
     print("Search terms, one or several separated by comma")
@@ -36,7 +36,7 @@ def project_setup():
     global keywords
     keywords = ""
     keywords = input('e.g. monkey,"time for bananas",#ape2020,"donkey kong": ')
-    
+
     # USERNAMES
     print("")
     print("Usernames, one or several separated by space")
@@ -45,7 +45,7 @@ def project_setup():
     usernames = ""
     usernames = input('e.g. @nintendo @jupyter (with or without the "@"): ')
     usernames = [un for un in usernames.split()]
-    
+
     # DATES
     print("")
     print("Enter date range for search in YYYY-NN-DD format")
@@ -55,7 +55,7 @@ def project_setup():
     global until
     until = (input("end date UTC (excluded from search): "))
     validate(until)
-    
+
     # TOPTWEETS
     print("")
     print("Do you want to get only the Top Tweets?")
@@ -65,7 +65,7 @@ def project_setup():
         toptweets = True
     else:
         toptweets = False
-    
+
     #MAXTWEETS
     print("")
     print("\nEnter maximum number of tweets to get per search term, or set 0 to get all possible tweets")
@@ -77,7 +77,7 @@ def project_setup():
     else:
         print("You did not enter a numeric value")
         sys.exit()
-        
+
 def create_database():
     try:
         conn = sqlite3.connect(dbname)
@@ -97,17 +97,18 @@ def create_database():
         conn.close()
     except:
         print("A database with this name already exists")
-        sys.exit()       
-    
+        sys.exit()
+
 def run_search():
-    
+
     for kw in keywords.split(","):
-        
+
+        print("Getting tweets for " + kw)
+
         conn = sqlite3.connect(dbname)
-    
         tweetCriteria = got.manager.TweetCriteria()
 
-        # Set the search parameters that we always set       
+        # Set the search parameters that we always set
         tweetCriteria.setMaxTweets(maxtweets)
         tweetCriteria.setSince(since)
         tweetCriteria.setUntil(until)
@@ -118,7 +119,7 @@ def run_search():
             tweetCriteria.setQuerySearch(kw)
         if len(usernames) != 0:
             tweetCriteria.setUsername(usernames)
-        
+
 
         tweets=got.manager.TweetManager.getTweets(tweetCriteria)
         for t in tweets:
@@ -132,8 +133,8 @@ def run_search():
             mentions = t.mentions
             hashtags = t.hashtags
             geo = t.geo
-            
-            
+
+
             conn.execute('INSERT INTO tweets (tweet_id, author, in_reply_to, tweet, date, retweets, favourites, mentions, hashtags,geo) VALUES (?,?,?,?,?,?,?,?,?,?)',\
                          (tweet_id, author, in_reply_to, tweet, date, retweets, favourites, mentions, hashtags, geo))
             conn.commit()
@@ -149,11 +150,11 @@ def remove_duplicates():
     cur.execute("INSERT INTO tweets SELECT * FROM temp_table")
     cur.execute("DELETE from temp_table")
     conn.commit()
-    
+
     cur.execute("SELECT max(rowid) from tweets")
     n = cur.fetchone()[0]
     print("\n" + str(n) + " tweets written to database\n")
-            
+
 def validate(date_text):
     try:
         datetime.datetime.strptime(date_text, '%Y-%m-%d')
