@@ -3,6 +3,9 @@
 *.db-journal
 *.csv
 
+# Exclude Jupyter Notebooks (used for dev work)
+*.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
