@@ -1,6 +1,7 @@
-# Exclude any created databases from push
+# Exclude any created databases or csvs from push
 *.db
 *.db-journal
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
