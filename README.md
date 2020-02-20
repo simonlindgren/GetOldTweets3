@@ -8,6 +8,12 @@ To use the wrapper script:
 python got3.py
 ```
 
+## Export to csv
+After running a search:
+```
+python sql2csv.py
+```
+
 ## Prerequisites
 Run the following command to install package dependencies:
 ```
