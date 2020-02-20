@@ -43,7 +43,7 @@ def project_setup():
     print("Leave empty to only search by terms")
     global usernames
     usernames = ""
-    usernames = input('e.g. @nintendo @jupyter: ')
+    usernames = input('e.g. @nintendo @jupyter (with or without the "@"): ')
     usernames = [un for un in usernames.split()]
     
     # DATES
@@ -68,7 +68,7 @@ def project_setup():
     
     #MAXTWEETS
     print("")
-    print("\nEnter maximum number of tweets to get per keyword, or set 0 to get all possible tweets")
+    print("\nEnter maximum number of tweets to get per search term, or set 0 to get all possible tweets")
     global maxtweets
     maxtweets = (input("max tweets "))
     if maxtweets.isnumeric():
